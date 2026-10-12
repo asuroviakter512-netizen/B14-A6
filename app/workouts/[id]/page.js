@@ -1,0 +1,17 @@
+'use client';
+import Link from 'next/link';
+import { useParams, notFound } from 'next/navigation';
+import { ArrowLeft, ArrowUpRight, BookmarkPlus, Check, Clock3, Flame, Plus, Star } from 'lucide-react';
+import { useFitLog } from '@/components/FitLogProvider';
+import { getWorkoutById } from '@/lib/workouts';
+export default function WorkoutDetailPage() {
+  const params = useParams();
+  const { workouts, loading, planIds, savedIds, addToPlan, saveForLater } = useFitLog();
+  const workout = getWorkoutById(workouts, decodeURIComponent(params.id));
+  if (!workout && !loading) notFound();
+  if (!workout) return <section className="detail-page container"><div className="detail-loading"><span className="spinner"/> Loading workout details…</div></section>;
+  const planned = planIds.includes(workout.id);
+  const saved = savedIds.includes(workout.id);
+  const specs = [['Equipment', workout.equipment], ['Difficulty', workout.difficulty], ['Sets', workout.sets], ['Reps', workout.reps], ['Duration', `${workout.duration} min`], ['Calories', `${workout.calories} kcal`], ['Rating', `${Number(workout.rating).toFixed(1)} / 5`]];
+  return <section className="detail-page"><div className="container"><Link href="/" className="back-link"><ArrowLeft size={16}/> BACK TO LIBRARY</Link><div className="detail-grid"><div className="detail-visual"><img src={workout.image} alt={`${workout.name} demonstration`} /><div className="detail-visual-overlay"/><span className="detail-figure">FITLOG / EXERCISE FILE</span><div className="detail-visual-caption"><span>01</span><span>{workout.category.join(' / ').toUpperCase()}</span></div></div><div className="detail-content"><p className="eyebrow">THE MOVEMENT / {String(workout.id).slice(0,8).toUpperCase()}</p><h1>{workout.name}</h1><p className="detail-description">{workout.description}</p><div className="tag-row detail-tags">{workout.category.map(tag=><span className="tag" key={tag}>{tag}</span>)}</div><div className="detail-stats"><span><Clock3 size={16}/>{workout.duration} MIN</span><span><Flame size={16}/>{workout.calories} KCAL</span><span><Star size={16}/>{Number(workout.rating).toFixed(1)} RATING</span></div><div className="spec-panel"><div className="spec-heading"><h2>KEY SPECS</h2><span>AT A GLANCE</span></div><div className="spec-grid">{specs.map(([label,value])=><div className="spec-row" key={label}><span>{label}</span><b>{value}</b></div>)}</div></div><div className="instructions"><div className="spec-heading"><h2>INSTRUCTIONS</h2><span>FOCUS ON FORM</span></div><ol>{workout.instructions.map((step,i)=><li key={i}><span>{String(i+1).padStart(2,'0')}</span><p>{step}</p></li>)}</ol></div><div className="detail-actions"><button className="button button-primary" onClick={()=>addToPlan(workout.id)} disabled={planned || planIds.length >= 5}>{planned ? <Check size={17}/> : <Plus size={17}/>} {planned ? 'IN TODAY’S PLAN' : "ADD TO TODAY’S PLAN"}</button><button className={`button button-outline ${saved ? 'is-saved' : ''}`} onClick={()=>saveForLater(workout.id)}>{saved ? <Check size={17}/> : <BookmarkPlus size={17}/>} {saved ? 'SAVED FOR LATER' : 'SAVE FOR LATER'}</button></div>{planIds.length>=5 && !planned && <p className="limit-note">Your daily plan is full. Remove or finish a lift before adding another.</p>}<Link className="detail-plan-link" href="/my-plan">VIEW MY PLAN <ArrowUpRight size={15}/></Link></div></div></div></section>;
+}
